@@ -24,8 +24,10 @@ def run(
     res_mat = []
 
     for gamma in gamma_grid:
-        torch.manual_seed(44)
-        np.random.seed(44)
+        # torch.manual_seed(44)
+        # np.random.seed(44)
+        torch.manual_seed(78912)
+        np.random.seed(78912)
 
         A = SymLinear(A_init.clone())
         A.requires_grad_(True)
