@@ -33,5 +33,6 @@ class AcyclicReg(nn.Module):
     def forward(self, adj):
         adj_sq = torch.square(adj)
         adj_exp = torch.linalg.matrix_exp(adj_sq)
+        reg_val = torch.trace(adj_exp) - adj.shape[0]
 
-        return self.gamma * torch.trace(adj_exp)
+        return self.gamma * reg_val
