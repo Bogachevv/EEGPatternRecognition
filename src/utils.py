@@ -7,6 +7,10 @@ from enum import Enum
 import pathlib
 import pickle
 
+import torch
+from torch.utils.data import Dataset, DataLoader
+from torch.nn import functional as F
+
 import mne
 from mne import Epochs, pick_types, events_from_annotations
 from mne.channels import make_standard_montage, DigMontage
@@ -14,6 +18,7 @@ from mne.io import concatenate_raws, read_raw_edf
 from mne.datasets import eegbci
 from mne.decoding import Scaler
 
+from tqdm import tqdm
 
 class P300Getter:
     def __init__(self, raw_data, eloc, n_channels=64, sfreq=120, sample_size=72, target_chars=None):

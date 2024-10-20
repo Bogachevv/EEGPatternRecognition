@@ -6,12 +6,15 @@ import torch.utils.data
 
 from losses import HybridLoss
 
+from collections import defaultdict
+
+from tqdm import tqdm
 import wandb
 
 def _train_epoch(
     model: nn.Module,
     train_dataloader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.optimizer.Optimizer,
+    optimizer: torch.optim.Optimizer,
     criterion: HybridLoss,
     is_binary: bool,
     device: torch.device,
@@ -66,14 +69,14 @@ def _train_epoch(
         running_FP = running_FP.item()
         running_FN = running_FN.item()
 
-        epoch_ones = running_ones.double() / (len(train_dataloader.dataset)  // train_dataloader.batch_size)
-        epoch_precision = running_TP.double() / (running_TP + running_FP) if running_TP + running_FP != 0 else torch.tensor(0)
-        epoch_recall = running_TP.double() / (running_TP + running_FN) if running_TP + running_FN != 0 else torch.tensor(0)
+        epoch_ones = running_ones / (len(train_dataloader.dataset)  // train_dataloader.batch_size)
+        epoch_precision = running_TP / (running_TP + running_FP) if running_TP + running_FP != 0 else torch.tensor(0)
+        epoch_recall = running_TP / (running_TP + running_FN) if running_TP + running_FN != 0 else torch.tensor(0)
         epoch_f1 = (2 * (epoch_precision * epoch_recall) / (epoch_precision + epoch_recall)) if epoch_precision + epoch_recall != 0 else torch.tensor(0)
-        epoch_bc = (epoch_recall + running_TN.double() / (running_TN + running_FP)) / 2
+        epoch_bc = (epoch_recall + running_TN / (running_TN + running_FP)) / 2
 
     epoch_loss = running_loss / len(train_dataloader.dataset) 
-    epoch_acc = running_corrects.double() / len(train_dataloader.dataset)
+    epoch_acc = running_corrects / len(train_dataloader.dataset)
 
     # min_acc, max_acc = proportion_confint(running_corrects.cpu(), len(train_dataloader.dataset), 0.05)
 
@@ -100,6 +103,20 @@ def _train_epoch(
         logs_data['train/A_grad'] = torch.linalg.norm(A_grad)
 
     wandb.log(data=logs_data)
+
+    if is_binary:
+        return {
+            'TP': running_TP,
+            'TN': running_TN,
+            'FP': running_FP,
+            'FN': running_FN,
+            'accuracy': epoch_acc,
+            'f1': epoch_f1
+        }
+    else:
+        return {
+            'accuracy': epoch_acc,
+        }
 
 
 @torch.inference_mode
@@ -142,13 +159,13 @@ def _val_epoch(
             running_FP += FP
             running_FN += FN
         
-        running_loss += loss.item() * inputs_size
+        running_loss += loss * inputs_size
         running_corrects += torch.sum(preds == true_y)
 
     running_loss = running_loss.item()
     running_corrects = running_corrects.item()
     epoch_loss = running_loss / len(val_dataloader.dataset) 
-    epoch_acc = running_corrects.double() / len(val_dataloader.dataset)
+    epoch_acc = running_corrects / len(val_dataloader.dataset)
 
     if is_binary:
         running_ones = running_ones.item()
@@ -157,11 +174,11 @@ def _val_epoch(
         running_FP = running_FP.item()
         running_FN = running_FN.item()
 
-        epoch_ones = running_ones.double() / (len(val_dataloader.dataset)  // val_dataloader.batch_size)
-        epoch_precision = running_TP.double() / (running_TP + running_FP) if running_TP + running_FP != 0 else torch.tensor(0)
-        epoch_recall = running_TP.double() / (running_TP + running_FN) if running_TP + running_FN != 0 else torch.tensor(0)
+        epoch_ones = running_ones / (len(val_dataloader.dataset)  // val_dataloader.batch_size)
+        epoch_precision = running_TP / (running_TP + running_FP) if running_TP + running_FP != 0 else torch.tensor(0)
+        epoch_recall = running_TP / (running_TP + running_FN) if running_TP + running_FN != 0 else torch.tensor(0)
         epoch_f1 = (2 * (epoch_precision * epoch_recall) / (epoch_precision + epoch_recall)) if epoch_precision + epoch_recall != 0 else torch.tensor(0)
-        epoch_bc = (epoch_recall + running_TN.double() / (running_TN + running_FP)) / 2
+        epoch_bc = (epoch_recall + running_TN / (running_TN + running_FP)) / 2
 
     # min_acc, max_acc = proportion_confint(running_corrects.cpu(), len(val_dataloader.dataset), 0.05)
 
@@ -185,6 +202,76 @@ def _val_epoch(
 
     wandb.log(data=logs_data)
 
+    if is_binary:
+        return {
+            'TP': running_TP,
+            'TN': running_TN,
+            'FP': running_FP,
+            'FN': running_FN,
+            'accuracy': epoch_acc,
+            'f1': epoch_f1
+        }
+    else:
+        return {
+            'accuracy': epoch_acc,
+        }
 
-def train_model():
-    pass
+
+def train_model(
+    model: nn.Module,
+    train_dataloader: torch.utils.data.DataLoader,
+    val_dataloader: torch.utils.data.DataLoader,
+    optimizer: torch.optim.Optimizer,
+    criterion: HybridLoss,
+    num_epochs: int,
+    is_binary: bool,
+    device: torch.device,
+    run_name: str,
+):
+    train_stats = defaultdict(lambda: list())
+    val_stats = defaultdict(lambda: list())
+
+    wandb_run = wandb.init(
+        project='EEGPatternRecognition',
+        save_code=True,
+        name=run_name,
+    )
+
+    model = model.to(device)
+
+    val_epoch_st = _val_epoch(
+        model=model,
+        val_dataloader=val_dataloader,
+        criterion=criterion,
+        is_binary=is_binary,
+        device=device,
+    )
+    for key, val in val_epoch_st.items():
+        val_stats[key].append(val)
+
+    for epoch_num in tqdm(range(num_epochs)):
+        train_epoch_st = _train_epoch(
+            model=model,
+            train_dataloader=train_dataloader,
+            optimizer=optimizer,
+            criterion=criterion,
+            is_binary=is_binary,
+            device=device,
+        )
+
+        val_epoch_st = _val_epoch(
+            model=model,
+            val_dataloader=val_dataloader,
+            criterion=criterion,
+            is_binary=is_binary,
+            device=device,
+        )
+
+        for key, val in train_epoch_st.items():
+            train_stats[key].append(val)
+        for key, val in val_epoch_st.items():
+            val_stats[key].append(val)
+    
+    wandb_run.finish()
+    
+    return train_stats, val_stats

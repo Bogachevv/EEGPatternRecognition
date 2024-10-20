@@ -27,10 +27,10 @@ class AdjLayer(nn.Module):
 
     def forward(self, x):
         if self.is_sym:
-            res = torch.matmul(self.base_mat, x) + torch.matmul(self.base_mat.T, x)
+            res = torch.matmul(self.adj_mat, x) + torch.matmul(self.adj_mat.T, x)
             res = res / 2
         else:
-            res = torch.matmul(self.base_mat, x)
+            res = torch.matmul(self.adj_mat, x)
         
         return res
 

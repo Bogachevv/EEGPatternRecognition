@@ -1,7 +1,7 @@
 import sys
-sys.path.append('./src')
+sys.path.append(r'C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\src')
 
-from src.run_experimet import run
+from run_experiment import run
 
 def main():
     if len(sys.argv) == 1:

@@ -31,7 +31,7 @@ def load_adj_layer(config):
     if isinstance(init_type, str):
         init_type = AdjLayerInit[init_type]
 
-    if init_type != AdjLayerInit.Random:
+    if init_type is not AdjLayerInit.Random:
         raise NotImplementedError("Only Random was implemented")
 
     adj_layer = AdjLayer(
@@ -48,7 +48,7 @@ def load_model(config):
     if isinstance(model_type, str):
         model_type = ModelType[model_type]
     
-    if model_type != ModelType.BaseGNN:
+    if model_type is not ModelType.BaseGNN:
         raise NotImplementedError("Only BaseGNN was implemented")
     
     adj_layer = load_adj_layer(config)
@@ -74,9 +74,9 @@ def load_criterion(config) -> HybridLoss:
     if len(gamma_ls) != len(reg_types):
         raise ValueError(f"Arrays regularization ({len(reg_types)}) and regularization_gamma ({len(gamma_ls)}) must be same length")
 
-    if base_criterion is BaseCriterionType.MSE:
+    if base_criterion_type is BaseCriterionType.MSE:
         base_criterion = nn.MSELoss()
-    elif base_criterion is BaseCriterionType.GraphLoss:
+    elif base_criterion_type is BaseCriterionType.GraphLoss:
         base_criterion = GraphLoss()
     else:
         raise NotImplementedError("Only MSE and GraaphLoss was implemented")
@@ -97,3 +97,8 @@ def load_criterion(config) -> HybridLoss:
 
     criterion = HybridLoss(criterions)
     return criterion    
+
+def load_optimizer(config, model: nn.Module):
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=config.lr)
+
+    return optimizer
