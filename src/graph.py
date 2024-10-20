@@ -37,13 +37,6 @@ def get_delaunay_graph(eloc, picture=False):
     for path in tri.simplices[:, 1:]:
         nx.add_cycle(G, path)
 
-    #for node in [23, 26, 34, 35, 28, 36]:
-    #    G.add_edge(27, node)
-
-    #G.remove_edge(63, 42)
-    #G.remove_edge(63, 43)
-    #G.remove_edge(42, 43)
-
     if picture:
         plot_graph(G)
 
