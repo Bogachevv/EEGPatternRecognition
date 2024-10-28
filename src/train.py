@@ -5,6 +5,7 @@ import torch.utils
 import torch.utils.data
 
 from losses import HybridLoss
+from logger import Logger
 
 from collections import defaultdict
 
@@ -18,6 +19,7 @@ def _train_epoch(
     criterion: HybridLoss,
     is_binary: bool,
     device: torch.device,
+    logger: Logger,
 ):
     model.train()
 
@@ -102,7 +104,7 @@ def _train_epoch(
         A_grad = model.adj.adj_mat.grad.detach()
         logs_data['train/A_grad'] = torch.linalg.norm(A_grad)
 
-    wandb.log(data=logs_data)
+    logger.log(data=logs_data)
 
     if is_binary:
         return {
@@ -126,6 +128,7 @@ def _val_epoch(
     criterion: HybridLoss,
     is_binary: bool,
     device: torch.device,
+    logger: Logger,
 ):
     model.eval()
 
@@ -200,7 +203,7 @@ def _val_epoch(
         logs_data['train/FP'] = running_FP
         logs_data['train/FN'] = running_FN
 
-    wandb.log(data=logs_data)
+    logger.log(data=logs_data)
 
     if is_binary:
         return {
@@ -226,16 +229,10 @@ def train_model(
     num_epochs: int,
     is_binary: bool,
     device: torch.device,
-    run_name: str,
+    logger: Logger
 ):
     train_stats = defaultdict(lambda: list())
     val_stats = defaultdict(lambda: list())
-
-    wandb_run = wandb.init(
-        project='EEGPatternRecognition',
-        save_code=True,
-        name=run_name,
-    )
 
     model = model.to(device)
 
@@ -245,6 +242,7 @@ def train_model(
         criterion=criterion,
         is_binary=is_binary,
         device=device,
+        logger=logger,
     )
     for key, val in val_epoch_st.items():
         val_stats[key].append(val)
@@ -257,6 +255,7 @@ def train_model(
             criterion=criterion,
             is_binary=is_binary,
             device=device,
+            logger=logger
         )
 
         val_epoch_st = _val_epoch(
@@ -265,6 +264,7 @@ def train_model(
             criterion=criterion,
             is_binary=is_binary,
             device=device,
+            logger=logger,
         )
 
         for key, val in train_epoch_st.items():
@@ -272,6 +272,6 @@ def train_model(
         for key, val in val_epoch_st.items():
             val_stats[key].append(val)
     
-    wandb_run.finish()
+    logger.finish()
     
     return train_stats, val_stats

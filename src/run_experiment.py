@@ -2,6 +2,7 @@ import model_loader
 import data_preparation
 import eval
 import train
+import logger
 
 import torch
 
@@ -21,6 +22,19 @@ def run(cfg_path):
     train_dataset, test_dataset = data_preparation.load_dataset(config)
     train_dataloader, test_dataloader = data_preparation.get_dataloaders(config, train_dataset, test_dataset)
 
+    logger_type = config.get('logger', 'NOLOGGER')
+    if isinstance(logger_type, str):
+        logger_type = logger.LoggerType[logger_type]
+    
+    if logger_type is logger.LoggerType.NOLOGGER:
+        lgr = logger.NoLogger(project='EEGPatternRecognition', run_name=config.run_name)
+    elif logger_type is logger.LoggerType.CONSOLE:
+        lgr = logger.ConsoleLogger(project='EEGPatternRecognition', run_name=config.run_name)
+    elif logger_type is logger.LoggerType.WANDB:
+        lgr = logger.WandbLogger(project='EEGPatternRecognition', run_name=config.run_name, save_code=True)
+    else:
+        raise ValueError('Incorrect logger type')
+
     device = torch.device('cpu')
     if torch.cuda.is_available():
         device = torch.device('cuda')
@@ -34,12 +48,14 @@ def run(cfg_path):
         num_epochs=config.num_epoch,
         is_binary=config.is_binary,
         device=device,
-        run_name=config.run_name,
+        logger=lgr,
     )
+
+    print(f"{train_stats=}\n\n{val_stats=}")
 
     if config.get('dump_path', None):
         with open(config['dump_path'], 'wb') as f:
-            pickle.dump({
-                'train': train_stats,
-                'validation': val_stats,
-            })
+            pickle.dump(obj={
+                'train': dict(train_stats),
+                'validation': dict(val_stats),
+            }, file=f)
