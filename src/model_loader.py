@@ -34,10 +34,15 @@ def load_adj_layer(config):
     if init_type is not AdjLayerInit.Random:
         raise NotImplementedError("Only Random was implemented")
 
+    adj_generator = torch.Generator()
+    if 'adj_seed' in config:
+        adj_generator.manual_seed(int(config['adj_seed']))
+
     adj_layer = AdjLayer(
         n_channels=config.n_channels,
         init_mat=None,
-        is_sym=config.adj_sym
+        is_sym=config.adj_sym,
+        generator=adj_generator,
     )
 
     return adj_layer

@@ -13,6 +13,7 @@ from enum import Enum
 import pathlib
 from tqdm import tqdm
 
+import utils
 from utils import P300Getter
 
 
@@ -149,16 +150,20 @@ def load_dataset(config):
 
 
 def get_dataloaders(config, train_dataset, test_dataset):
+    gen = torch.Generator()
+
     train_dataloader = DataLoader(
         dataset=train_dataset, 
         batch_size=config.train_bs, 
-        shuffle=True
+        shuffle=True,
+        generator=gen,
+        worker_init_fn=utils.seed_worker
     )
 
     test_dataloader =  DataLoader(
         dataset=test_dataset, 
         batch_size=config.test_bs, 
-        shuffle=False
+        shuffle=False,
     )
 
     return train_dataloader, test_dataloader

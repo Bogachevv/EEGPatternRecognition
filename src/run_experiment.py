@@ -3,6 +3,7 @@ import data_preparation
 import eval
 import train
 import logger
+import utils
 
 import torch
 
@@ -15,6 +16,8 @@ import pickle
 def run(cfg_path):
     config = OmegaConf.load(cfg_path)
 
+    utils.set_global_seed(config.seed)
+
     model = model_loader.load_model(config)
     criterion = model_loader.load_criterion(config)
     optimizer = model_loader.load_optimizer(config, model=model)
@@ -26,11 +29,11 @@ def run(cfg_path):
     if isinstance(logger_type, str):
         logger_type = logger.LoggerType[logger_type]
     
-    if logger_type is logger.LoggerType.NOLOGGER:
+    if logger_type is logger.LoggerType.nologger:
         lgr = logger.NoLogger(project='EEGPatternRecognition', run_name=config.run_name)
-    elif logger_type is logger.LoggerType.CONSOLE:
+    elif logger_type is logger.LoggerType.console:
         lgr = logger.ConsoleLogger(project='EEGPatternRecognition', run_name=config.run_name)
-    elif logger_type is logger.LoggerType.WANDB:
+    elif logger_type is logger.LoggerType.wandb:
         lgr = logger.WandbLogger(project='EEGPatternRecognition', run_name=config.run_name, save_code=True)
     else:
         raise ValueError('Incorrect logger type')

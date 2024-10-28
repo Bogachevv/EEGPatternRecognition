@@ -6,9 +6,9 @@ import wandb.wandb_run
 
 
 class LoggerType(Enum):
-    NOLOGGER = 0,
-    CONSOLE = 1,
-    WANDB = 2
+    nologger = 0,
+    console = 1,
+    wandb = 2
 
 
 class Logger(ABC):

@@ -7,20 +7,21 @@ from torch_geometric.nn import global_mean_pool as gap, global_max_pool as gmp
 
 
 class AdjLayer(nn.Module):
-    def __init__(self, n_channels: int, init_mat: torch.Tensor = None, is_sym: bool = True):
+    def __init__(self, n_channels: int, init_mat: torch.Tensor = None, is_sym: bool = True, generator: torch.Generator = None):
         super().__init__()
 
-        init_mat = AdjLayer._get_init(n_channels) if init_mat is None else init_mat
+        init_mat = AdjLayer._get_init(n_channels, generator=generator) if init_mat is None else init_mat
         self.adj_mat = nn.Parameter(init_mat)
         self.is_sym = is_sym
     
     @staticmethod
     @torch.no_grad
-    def _get_init(n_channels):
+    def _get_init(n_channels, generator: torch.Generator):
         init_mat = torch.empty((n_channels, n_channels))
         nn.init.xavier_uniform_(
             tensor=init_mat,
-            gain=nn.init.calculate_gain('relu')
+            gain=nn.init.calculate_gain('relu'),
+            generator=generator
         )
 
         return init_mat
