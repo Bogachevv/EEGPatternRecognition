@@ -1,6 +1,6 @@
 model: BaseGNN
-run_name: neighbors_init
-adj_init: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\neighbors_init.bin
+run_name: random_init
+adj_init: null
 adj_sym: true
 input_feat_dim: 48
 n_channels: 64
@@ -8,7 +8,7 @@ base_criterion: MSE
 regularization: []
 regularization_gamma: []
 data_path: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\matrix_dataset
-dump_path: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\dumps\dump_${run_name}_seed_${seed}_adj_${adj_seed}.bin
+dump_path: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\dumps\random_init\dump_${run_name}_seed_${seed}_adj_${adj_seed}.bin
 train_bs: 512
 test_bs: 1024
 num_epoch: 200

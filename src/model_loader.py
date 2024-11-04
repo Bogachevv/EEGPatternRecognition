@@ -61,6 +61,8 @@ def load_model(config):
     
     adj_layer = load_adj_layer(config)
     
+    print(torch.random.get_rng_state())
+
     model = BaseGNN(
         input_feat_dim=config.input_feat_dim,
         n_channels=config.n_channels,
