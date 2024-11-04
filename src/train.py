@@ -20,6 +20,7 @@ def _train_epoch(
     is_binary: bool,
     device: torch.device,
     logger: Logger,
+    max_grad_norm: float
 ):
     model.train()
 
@@ -39,6 +40,7 @@ def _train_epoch(
         loss = criterion(input=outputs, target=labels, adj=model.adj.adj_mat)
 
         loss.backward()
+        nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=max_grad_norm)
         optimizer.step()
 
         with torch.no_grad():
@@ -198,10 +200,10 @@ def _val_epoch(
         logs_data['val/epoch_recall'] = epoch_recall
         logs_data['val/epoch_f1'] = epoch_f1
 
-        logs_data['train/TP'] = running_TP
-        logs_data['train/TN'] = running_TN
-        logs_data['train/FP'] = running_FP
-        logs_data['train/FN'] = running_FN
+        logs_data['val/TP'] = running_TP
+        logs_data['val/TN'] = running_TN
+        logs_data['val/FP'] = running_FP
+        logs_data['val/FN'] = running_FN
 
     logger.log(data=logs_data)
 
@@ -229,7 +231,8 @@ def train_model(
     num_epochs: int,
     is_binary: bool,
     device: torch.device,
-    logger: Logger
+    logger: Logger,
+    max_grad_norm: float = 1.0,
 ):
     train_stats = defaultdict(lambda: list())
     val_stats = defaultdict(lambda: list())
@@ -255,7 +258,8 @@ def train_model(
             criterion=criterion,
             is_binary=is_binary,
             device=device,
-            logger=logger
+            logger=logger,
+            max_grad_norm=max_grad_norm,
         )
 
         val_epoch_st = _val_epoch(

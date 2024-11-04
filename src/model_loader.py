@@ -2,6 +2,11 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+import numpy as np
+import scipy
+from scipy.spatial import Delaunay
+import networkx as nx
+
 from models_gnn import BaseGNN, AdjLayer
 from losses import HybridLoss, GraphLoss
 import regularization
@@ -9,12 +14,10 @@ import regularization
 from omegaconf import OmegaConf
 from enum import Enum
 
+import pickle
 
 class ModelType(Enum):
     BaseGNN = 1,
-
-class AdjLayerInit(Enum):
-    Random = 1,
 
 class BaseCriterionType(Enum):
     MSE = 1,
@@ -27,12 +30,12 @@ class RegularizationType(Enum):
 
 
 def load_adj_layer(config):
-    init_type = config.adj_init
-    if isinstance(init_type, str):
-        init_type = AdjLayerInit[init_type]
+    init_path = config.adj_init
 
-    if init_type is not AdjLayerInit.Random:
-        raise NotImplementedError("Only Random was implemented")
+    init_mat = None
+    if init_path is not None:
+        with open(init_path, 'rb') as f:
+            init_mat = pickle.load(f) 
 
     adj_generator = torch.Generator()
     if 'adj_seed' in config:
@@ -40,7 +43,7 @@ def load_adj_layer(config):
 
     adj_layer = AdjLayer(
         n_channels=config.n_channels,
-        init_mat=None,
+        init_mat=init_mat,
         is_sym=config.adj_sym,
         generator=adj_generator,
     )
