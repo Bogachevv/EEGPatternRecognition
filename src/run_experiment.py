@@ -22,7 +22,7 @@ def run(cfg_path):
     criterion = model_loader.load_criterion(config)
     optimizer = model_loader.load_optimizer(config, model=model)
 
-    adj_init = model.adj.adj_mat.detach().cpu().numpy()
+    adj_init = model.gc.adj.adj_mat.detach().cpu().numpy()
 
     train_dataset, test_dataset = data_preparation.load_dataset(config)
     train_dataloader, test_dataloader = data_preparation.get_dataloaders(config, train_dataset, test_dataset)
@@ -57,22 +57,27 @@ def run(cfg_path):
         max_grad_norm=config.get('max_grad_norm', 1000.0),
     )
 
-    adj_final = model.adj.adj_mat.detach().cpu().numpy()
+    adj_final = model.gc.adj.adj_mat.detach().cpu().numpy()
 
     print(f"{train_stats=}\n\n{val_stats=}")
 
-    if config.get('dump_path', None):
-        logs = {
-            'train_curve': {
-                'train': dict(train_stats),
-                'validation': dict(val_stats),
-            },
-            'adj': {
-                'init': adj_init,
-                'final': adj_final,
-            },
-            'config': OmegaConf.to_container(config, resolve=True)
-        }
+    logs = {
+        'train_curve': {
+            'train': dict(train_stats),
+            'validation': dict(val_stats),
+        },
+        'adj': {
+            'init': adj_init,
+            'final': adj_final,
+        },
+        'config': OmegaConf.to_container(config, resolve=True)
+    }
 
+    if config.get('dump_path', None):
         with open(config['dump_path'], 'wb') as f:
             pickle.dump(obj=logs, file=f)
+    
+    return {
+        'logs': logs,
+        'model': model
+    }

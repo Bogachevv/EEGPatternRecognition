@@ -65,9 +65,8 @@ class BaseGNN(nn.Module):
         super(BaseGNN, self).__init__()
 
         self.num_classes = num_classes
-        self.adj = adj
 
-        self.gc = SmallGIN(input_feat_dim, input_feat_dim, self.adj)
+        self.gc = SmallGIN(input_feat_dim, input_feat_dim, adj=adj)
         self.linear_channel = nn.Conv1d(n_channels, channel_filters, kernel_size=1, bias=True)
         self.conv = nn.Conv1d(channel_filters, 1, kernel_size=time_kernel, padding='same')
         self.bn1 = nn.BatchNorm1d(n_channels)

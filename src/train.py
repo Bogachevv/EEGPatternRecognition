@@ -37,7 +37,7 @@ def _train_epoch(
         inputs_size = inputs.size(0)
 
         outputs = model(inputs)
-        loss = criterion(input=outputs, target=labels, adj=model.adj.adj_mat)
+        loss = criterion(input=outputs, target=labels, adj=model.gc.adj.adj_mat)
 
         loss.backward()
         nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=max_grad_norm)
@@ -102,8 +102,8 @@ def _train_epoch(
         logs_data['train/FP'] = running_FP
         logs_data['train/FN'] = running_FN
 
-    if hasattr(model, 'adj') and hasattr(model.adj.adj_mat, 'requires_grad') and model.adj.adj_mat.requires_grad:
-        A_grad = model.adj.adj_mat.grad.detach()
+    if hasattr(model, 'adj') and hasattr(model.gc.adj.adj_mat, 'requires_grad') and model.gc.adj.adj_mat.requires_grad:
+        A_grad = model.gc.adj.adj_mat.grad.detach()
         logs_data['train/A_grad'] = torch.linalg.norm(A_grad)
 
     logger.log(data=logs_data)
@@ -124,7 +124,7 @@ def _train_epoch(
 
 
 @torch.inference_mode
-def _val_epoch(
+def val_epoch(
     model: nn.Module,
     val_dataloader: torch.utils.data.DataLoader,
     criterion: HybridLoss,
@@ -145,7 +145,7 @@ def _val_epoch(
         inputs_size = inputs.size(0)
 
         outputs = model(inputs)
-        loss = criterion(input=outputs, target=labels, adj=model.adj.adj_mat)
+        loss = criterion(input=outputs, target=labels, adj=model.gc.adj.adj_mat)
 
         _, preds = torch.max(outputs, 1)
         _, true_y = torch.max(labels.data, 1)
@@ -239,7 +239,7 @@ def train_model(
 
     model = model.to(device)
 
-    val_epoch_st = _val_epoch(
+    val_epoch_st = val_epoch(
         model=model,
         val_dataloader=val_dataloader,
         criterion=criterion,
@@ -262,7 +262,7 @@ def train_model(
             max_grad_norm=max_grad_norm,
         )
 
-        val_epoch_st = _val_epoch(
+        val_epoch_st = val_epoch(
             model=model,
             val_dataloader=val_dataloader,
             criterion=criterion,
