@@ -214,11 +214,13 @@ def val_epoch(
             'FP': running_FP,
             'FN': running_FN,
             'accuracy': epoch_acc,
-            'f1': epoch_f1
+            'f1': epoch_f1,
+            'loss': epoch_loss,
         }
     else:
         return {
             'accuracy': epoch_acc,
+            'loss': epoch_loss,
         }
 
 
