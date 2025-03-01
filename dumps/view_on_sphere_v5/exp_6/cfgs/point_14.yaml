@@ -1,0 +1,20 @@
+model: BaseGNN
+run_name: view_on_sphere_v5_exp_6_theta=03500
+seed: 42
+adj_init: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\dumps\view_on_sphere_v5\exp_6\adj_dumps\point_14.bin
+adj_sym: true
+input_feat_dim: 48
+n_channels: 64
+base_criterion: MSE
+regularization: []
+regularization_gamma: []
+data_path: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\matrix_dataset
+dump_path: C:\Users\Vladimir\PycharmProjects\EEGPatternRecognition\dumps\viewer\dump_view_on_sphere_v5_exp_6_theta=03500.bin
+train_bs: 512
+test_bs: 8192
+num_epoch: 200
+is_binary: true
+lr: 0.0001
+max_grad_norm: 0.4
+logger: wandb
+
